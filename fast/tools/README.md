@@ -1,0 +1,22 @@
+# FAST configurator
+
+- read stage configuration from yaml
+- no FAST tfvars and providers found in stage
+  - no FAST tfvars and providers
+    - look for previous stages in local fs
+      - stages found, run tf outpup
+      - no stages found or no outputs, prompt user for GCS bucket
+    - set up FAST tfvars and providers
+- read existing tfvars and use as optional defaults if found
+- prompt user for optional configuration
+- write tfvars
+- prompt user for CI/CD repo
+  - if a repo is specified
+    - prompt user for modules repo
+      - no repo needed, use Fabric repo
+      - existing repo, use it
+        - prompt if modules need to be pushed to repo
+    - fix module sources
+    - copy workflow file in correct location
+    - push files to repo
+  - if no repo is specified show terraform commands
