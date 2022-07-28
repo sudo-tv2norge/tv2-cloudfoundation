@@ -1,0 +1,8 @@
+stage:
+  id: 01-resman
+  name: Resource Management
+  description: Foo bar baz.
+  # variant: abc
+  # environment: dev
+  requires:
+    - 00-bootstrap

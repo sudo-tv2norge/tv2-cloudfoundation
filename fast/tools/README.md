@@ -1,22 +1,36 @@
 # FAST configurator
 
-- read stage configuration from yaml
-- no FAST tfvars and providers found in stage
-  - no FAST tfvars and providers
-    - look for previous stages in local fs
-      - stages found, run tf outpup
-      - no stages found or no outputs, prompt user for GCS bucket
-    - set up FAST tfvars and providers
-- read existing tfvars and use as optional defaults if found
-- prompt user for optional configuration
-- write tfvars
-- prompt user for CI/CD repo
-  - if a repo is specified
-    - prompt user for modules repo
-      - no repo needed, use Fabric repo
-      - existing repo, use it
-        - prompt if modules need to be pushed to repo
-    - fix module sources
-    - copy workflow file in correct location
-    - push files to repo
-  - if no repo is specified show terraform commands
+<!-- # https://mermaid-js.github.io/mermaid/#/flowchart?id=graph
+ -->
+
+```mermaid
+flowchart TB
+  main([run])
+  check-stage-files{FAST interface\nfiles already present?}
+  check-tfvars{stage tfvars\nalready present?}
+  prompt-cicd{configure CI/CD repository?}
+  prompts[/variable prompts/]
+  main--->get-stage-config
+  subgraph FAST config
+  direction LR
+  get-stage-config--->check-stage-files
+  check-stage-files--->|no|link-stage-files
+  end
+  subgraph stage config
+  direction LR
+  check-stage-files--->|yes|check-tfvars
+  link-stage-files--->check-tfvars
+  check-tfvars--->|no|tfvars-config
+  tfvars-config--->prompts
+  prompts--->tfvars-config
+  tfvars-config--->write-tfvars
+  end
+  subgraph CI/CD config
+  direction LR
+  check-tfvars--->|yes|prompt-cicd
+  write-tfvars--->prompt-cicd
+  prompt-cicd--->|yes|push-to-repo
+  end
+  prompt-cicd--->|no|finish
+  push-to-repo--->finish
+```
