@@ -27,7 +27,9 @@ except ImportError as e:
   print('Missing dependencies (hint: pip install -r requirements.txt')
   raise
 
+# https://rich.readthedocs.io/en/stable/markup.html
 # https://apps.timwhitlock.info/emoji/tables/unicode
+
 EMOJI_FILE = '\N{dvd}'
 EMOJI_KO = '\N{cross mark}'
 EMOJI_OK = '\N{white heavy check mark}'
