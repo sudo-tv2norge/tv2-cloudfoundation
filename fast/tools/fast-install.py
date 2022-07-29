@@ -31,6 +31,7 @@ except ImportError as e:
 EMOJI_FILE = '\N{dvd}'
 EMOJI_KO = '\N{cross mark}'
 EMOJI_OK = '\N{white heavy check mark}'
+JUSTIFY = 50
 
 STAGE_TFVARS = ('{}.auto.tfvars.json', '{}.auto.tfvars', 'terraform.tfvars')
 
@@ -68,6 +69,24 @@ def get_interface_files(stage_id, required_stages, stage_dir='.'):
   return {f.name: f.exists() for f in interface_files}
 
 
+def get_sibling_stage_dir(stage_dir, sibling_id):
+  'Return the path of a sibling stage.'
+  try:
+    stage_path = pathlib.Path(stage_dir).resolve(strict=True)
+  except FileNotFoundError:
+    return
+  name, env = sibling_id, None
+  root_path = stage_path / '..'
+  if not stage_path.name.startswith('0'):
+    root_path = root_path / '..'
+  if sibling_id.startswith('03'):
+    name, _, env = sibling_id.rpartition('-')
+  sibling_path = root_path / name
+  if env:
+    sibling_path = sibling_path / env
+  return str(sibling_path) if sibling_path.exists() else None
+
+
 def try_stage_outputs(stage_id='00-bootstrap'):
   return
 
@@ -81,10 +100,17 @@ def parse_tfvars(fname):
     raise Error(f'Cannot open \'{fname}\': {e.args[0]}')
 
 
-def _run_cmd(cmd):
+def _print(s, emoji=EMOJI_FILE, justify=JUSTIFY, end=''):
+  'Print left justified string prefixed by emoji.'
+  print(f'{emoji} {s.ljust(justify)}', end='')
+
+
+def _run_cmd(cmd, cwd=None, return_none=False):
+  'Run command.'
   cmd = cmd.split()
+  error = None
   try:
-    result = subprocess.run(cmd, capture_output=True)
+    result = subprocess.run(cmd, capture_output=True, cwd=cwd)
   except FileNotFoundError as e:
     error = e.args[0]
     text = (
@@ -95,16 +121,11 @@ def _run_cmd(cmd):
       error = result.stderr.decode('utf-8').strip()
       text = f'Error running {cmd[0]} command: {error}'
   if error:
+    if return_none:
+      return
     raise Error(text, cmd, error)
   out = result.stdout.decode('utf-8').strip()
   return out
-
-
-def _run_func(s, func, emoji=EMOJI_FILE, justify=48):
-  print(f'{emoji} {s.ljust(justify)}', end='')
-  result = func()
-  print(EMOJI_OK)
-  return result
 
 
 @click.command()
@@ -114,13 +135,31 @@ def _run_func(s, func, emoji=EMOJI_FILE, justify=48):
 def main(stage_dir='.'):
   console = rich.console.Console()
   try:
-    attrs = _run_func('reading YAML configuration',
-                      functools.partial(get_config, stage_dir))
-    interface_files = _run_func(
-        'checking FAST interface files',
-        functools.partial(get_interface_files, attrs['id'], attrs['requires'],
-                          stage_dir))
-    if not all(v for v in interface_files.values()):
+    _print('reading YAML configuration')
+    attrs = get_config(stage_dir)
+    print(EMOJI_OK)
+    _print('checking FAST interface files')
+    interface_files = get_interface_files(attrs['id'], attrs['requires'],
+                                          stage_dir)
+    if all(v for v in interface_files.values()):
+      print(EMOJI_OK)
+    else:
+      print(EMOJI_KO)
+      if attrs['id'] != '00-bootstrap':
+        bootstrap_dir = get_sibling_stage_dir(stage_dir, '00-bootstrap')
+        _print('looking for bootstrap stage')
+        if not bootstrap_dir:
+          print(EMOJI_KO)
+        else:
+          print(EMOJI_OK)
+          _print('trying bootstrap stage outputs')
+          bootstrap_output = _run_cmd('terraform output -json',
+                                      cwd=bootstrap_dir, return_none=True)
+          if not bootstrap_output:
+            print(EMOJI_KO)
+          else:
+            print(EMOJI_OK)
+            print(bootstrap_output)
       # try to find stage 0 and get its outputs
       # if it does not succeed, prompt for GCS bucket or single stage setup
       # if we have a GCS bucket, link files

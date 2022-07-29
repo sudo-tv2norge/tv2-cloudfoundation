@@ -1,0 +1,11 @@
+stage:
+  id: 03-data-platform
+  name: Data Platform (dev)
+  description: Foo bar baz.
+  # variant: abc
+  environment: dev
+  requires:
+    - 00-bootstrap
+    - 01-resman
+    - 02-networking
+    - 02-security
