@@ -44,18 +44,18 @@ The overall architecture is based on the following design decisions:
 The following example shows how to deploy a single cluster and a single node pool
 
 ```hcl
-module "gke" {
+locals {
+  master_authorized_ranges = {
+    gcp = "10.0.0.0/8"
+  }
+}
+
+module "gke-fleet" {
   source             = "./fabric/blueprints/gke/multitenant-fleet/"
-  project_id         = var.project_id
+  prefix             = "test"
   billing_account_id = var.billing_account_id
   folder_id          = var.folder_id
-  prefix             = "myprefix"
-  vpc_config = {
-    host_project_id = "my-host-project-id"
-    vpc_self_link   = "projects/my-host-project-id/global/networks/my-network"
-  }
-
-  authenticator_security_group = "gke-rbac-base@example.com"
+  project_id         = var.project_id
   group_iam = {
     "gke-admin@example.com" = [
       "roles/container.admin"
@@ -66,25 +66,29 @@ module "gke" {
       "cicd@my-cicd-project.iam.gserviceaccount.com"
     ]
   }
-
+  vpc_config = {
+    host_project_id = "test-net-host"
+  }
   clusters = {
-    mycluster = {
-      cluster_autoscaling = null
-      description         = "My cluster"
-      dns_domain          = null
-      location            = "europe-west1"
-      labels              = {}
-      net = {
-        master_range = "172.17.16.0/28"
-        pods         = "pods"
-        services     = "services"
-        subnet       = "projects/my-host-project-id/regions/europe-west1/subnetworks/mycluster-subnet"
+    cluster-0 = {
+      description = "Cluster 0"
+      location    = "europe-west1"
+      vpc_config = {
+        network    = "gke-vpc-0"
+        subnetwork = "projects/test-net-host/regions/europe-west1/subnetworks/gke-0"
+        private_cluster_config = {
+          master_authorized_ranges = local.master_authorized_ranges
+          master_ipv4_cidr_block   = "172.16.1.0/28"
+        }
+        secondary_range_names = {
+          pods     = "pods"
+          services = "services"
+        }
       }
-      overrides = null
     }
   }
   nodepools = {
-    mycluster = {
+    cluster-0 = {
       mynodepool = {
         initial_node_count = 1
         node_count         = 1
@@ -109,58 +113,60 @@ On the other hand, the second cluster (`cluster-euw3`) defines its own configura
 ```hcl
 module "gke" {
   source             = "./fabric/blueprints/gke/multitenant-fleet/"
-  project_id         = var.project_id
+  prefix             = "test"
   billing_account_id = var.billing_account_id
   folder_id          = var.folder_id
-  prefix             = "myprefix"
+  project_id         = var.project_id
+  group_iam = {
+    "gke-admin@example.com" = [
+      "roles/container.admin"
+    ]
+  }
+  iam = {
+    "roles/container.clusterAdmin" = [
+      "cicd@my-cicd-project.iam.gserviceaccount.com"
+    ]
+  }
   vpc_config = {
-    host_project_id = "my-host-project-id"
-    vpc_self_link   = "projects/my-host-project-id/global/networks/my-network"
+    host_project_id = "test-net-host"
   }
   clusters = {
-    cluster-euw1 = {
-      cluster_autoscaling = null
-      description         = "Cluster for europ-west1"
-      dns_domain          = null
-      location            = "europe-west1"
-      labels              = {}
-      net = {
-        master_range = "172.17.16.0/28"
-        pods         = "pods"
-        services     = "services"
-        subnet       = "projects/my-host-project-id/regions/europe-west1/subnetworks/euw1-subnet"
-      }
-      overrides = null
-    }
-    cluster-euw3 = {
-      cluster_autoscaling = null
-      description         = "Cluster for europe-west3"
-      dns_domain          = null
-      location            = "europe-west3"
-      labels              = {}
-      net = {
-        master_range = "172.17.17.0/28"
-        pods         = "pods"
-        services     = "services"
-        subnet       = "projects/my-host-project-id/regions/europe-west3/subnetworks/euw3-subnet"
-      }
-      overrides = {
-        cloudrun_config                 = false
-        database_encryption_key         = null
-        gcp_filestore_csi_driver_config = true
-        master_authorized_ranges = {
-          rfc1918_1 = "10.0.0.0/8"
+    cluster-0 = {
+      description = "Cluster 0"
+      location    = "europe-west1"
+      vpc_config = {
+        network    = "gke-vpc-0"
+        subnetwork = "projects/test-net-host/regions/europe-west1/subnetworks/gke-0"
+        private_cluster_config = {
+          master_authorized_ranges = local.master_authorized_ranges
+          master_ipv4_cidr_block   = "172.16.1.0/28"
         }
-        max_pods_per_node        = 64
-        pod_security_policy      = true
-        release_channel          = "STABLE"
-        vertical_pod_autoscaling = false
+        secondary_range_names = {
+          pods     = "pods"
+          services = "services"
+        }
+      }
+    }
+    cluster-1 = {
+      description = "Cluster 1"
+      location    = "europe-west3"
+      vpc_config = {
+        network    = "gke-vpc-0"
+        subnetwork = "projects/test-net-host/regions/europe-west3/subnetworks/gke-1"
+        private_cluster_config = {
+          master_authorized_ranges = local.master_authorized_ranges
+          master_ipv4_cidr_block   = "172.16.2.0/28"
+        }
+        secondary_range_names = {
+          pods     = "pods"
+          services = "services"
+        }
       }
     }
   }
   nodepools = {
-    cluster-euw1 = {
-      pool-euw1 = {
+    cluster-0 = {
+      pool-0 = {
         initial_node_count = 1
         node_count         = 1
         node_type          = "n2-standard-4"
@@ -168,8 +174,8 @@ module "gke" {
         spot               = false
       }
     }
-    cluster-euw3 = {
-      pool-euw3 = {
+    cluster-1 = {
+      pool-1 = {
         initial_node_count = 1
         node_count         = 1
         node_type          = "n2-standard-4"
@@ -200,47 +206,60 @@ This example deploys two clusters and configures several GKE Fleet features:
 ```hcl
 module "gke" {
   source             = "./fabric/blueprints/gke/multitenant-fleet/"
-  project_id         = var.project_id
+  prefix             = "test"
   billing_account_id = var.billing_account_id
   folder_id          = var.folder_id
-  prefix             = "myprefix"
+  project_id         = var.project_id
+  group_iam = {
+    "gke-admin@example.com" = [
+      "roles/container.admin"
+    ]
+  }
+  iam = {
+    "roles/container.clusterAdmin" = [
+      "cicd@my-cicd-project.iam.gserviceaccount.com"
+    ]
+  }
   vpc_config = {
-    host_project_id = "my-host-project-id"
-    vpc_self_link   = "projects/my-host-project-id/global/networks/my-network"
+    host_project_id = "test-net-host"
   }
   clusters = {
-    cluster-euw1 = {
-      cluster_autoscaling = null
-      description         = "Cluster for europe-west1"
-      dns_domain          = null
-      location            = "europe-west1"
-      labels              = {}
-      net = {
-        master_range = "172.17.16.0/28"
-        pods         = "pods"
-        services     = "services"
-        subnet       = "projects/my-host-project-id/regions/europe-west1/subnetworks/euw1-subnet"
+    cluster-0 = {
+      description = "Cluster 0"
+      location    = "europe-west1"
+      vpc_config = {
+        network    = "gke-vpc-0"
+        subnetwork = "projects/test-net-host/regions/europe-west1/subnetworks/gke-0"
+        private_cluster_config = {
+          master_authorized_ranges = local.master_authorized_ranges
+          master_ipv4_cidr_block   = "172.16.1.0/28"
+        }
+        secondary_range_names = {
+          pods     = "pods"
+          services = "services"
+        }
       }
-      overrides = null
     }
-    cluster-euw3 = {
-      cluster_autoscaling = null
-      description         = "Cluster for europe-west3"
-      dns_domain          = null
-      location            = "europe-west3"
-      labels              = {}
-      net = {
-        master_range = "172.17.17.0/28"
-        pods         = "pods"
-        services     = "services"
-        subnet       = "projects/my-host-project-id/regions/europe-west3/subnetworks/euw3-subnet"
+    cluster-1 = {
+      description = "Cluster 1"
+      location    = "europe-west3"
+      vpc_config = {
+        network    = "gke-vpc-0"
+        subnetwork = "projects/test-net-host/regions/europe-west3/subnetworks/gke-1"
+        private_cluster_config = {
+          master_authorized_ranges = local.master_authorized_ranges
+          master_ipv4_cidr_block   = "172.16.2.0/28"
+        }
+        secondary_range_names = {
+          pods     = "pods"
+          services = "services"
+        }
       }
-      overrides = null
     }
   }
   nodepools = {
-    cluster-euw1 = {
-      pool-euw1 = {
+    cluster-0 = {
+      pool-0 = {
         initial_node_count = 1
         node_count         = 1
         node_type          = "n2-standard-4"
@@ -248,17 +267,22 @@ module "gke" {
         spot               = false
       }
     }
-    cluster-euw3 = {
-      pool-euw3 = {
+    cluster-1 = {
+      pool-1 = {
         initial_node_count = 1
         node_count         = 1
         node_type          = "n2-standard-4"
-        overrides          = null
-        spot               = true
+        overrides = {
+          image_type        = "UBUNTU_CONTAINERD"
+          max_pods_per_node = 64
+          node_locations    = []
+          node_tags         = []
+          node_taints       = []
+        }
+        spot = true
       }
     }
   }
-
   fleet_features = {
     appdevexperience             = false
     configmanagement             = true

@@ -14,83 +14,131 @@
  * limitations under the License.
  */
 
-variable "authenticator_security_group" {
-  description = "Optional group used for Groups for GKE."
-  type        = string
-  default     = null
-}
-
 variable "billing_account_id" {
   description = "Billing account id."
   type        = string
 }
 
-variable "cluster_defaults" {
-  description = "Default values for optional cluster configurations."
-  type = object({
-    cloudrun_config                 = bool
-    database_encryption_key         = string
-    master_authorized_ranges        = map(string)
-    max_pods_per_node               = number
-    pod_security_policy             = bool
-    release_channel                 = string
-    vertical_pod_autoscaling        = bool
-    gcp_filestore_csi_driver_config = bool
-  })
-  default = {
-    # TODO: review defaults
-    cloudrun_config         = false
-    database_encryption_key = null
-    master_authorized_ranges = {
-      rfc1918_1 = "10.0.0.0/8"
-      rfc1918_2 = "172.16.0.0/12"
-      rfc1918_3 = "192.168.0.0/16"
-    }
-    max_pods_per_node               = 110
-    pod_security_policy             = false
-    release_channel                 = "STABLE"
-    vertical_pod_autoscaling        = false
-    gcp_filestore_csi_driver_config = false
-  }
-}
-
 variable "clusters" {
-  description = ""
+  description = "Cluster configuration, keys will be used for cluster names."
   type = map(object({
-    cluster_autoscaling = object({
-      cpu_min    = number
-      cpu_max    = number
-      memory_min = number
-      memory_max = number
-    })
-    description = string
-    dns_domain  = string
-    labels      = map(string)
-    location    = string
-    net = object({
-      master_range = string
-      pods         = string
-      services     = string
-      subnet       = string
-    })
-    overrides = object({
-      cloudrun_config         = bool
-      database_encryption_key = string
-      # binary_authorization            = bool
-      master_authorized_ranges        = map(string)
-      max_pods_per_node               = number
-      pod_security_policy             = bool
-      release_channel                 = string
-      vertical_pod_autoscaling        = bool
-      gcp_filestore_csi_driver_config = bool
+    cluster_autoscaling = optional(object({
+      auto_provisioning_defaults = optional(object({
+        boot_disk_kms_key = optional(string)
+        image_type        = optional(string)
+        oauth_scopes      = optional(list(string))
+        service_account   = optional(string)
+      }))
+      cpu_limits = optional(object({
+        min = number
+        max = number
+      }))
+      mem_limits = optional(object({
+        min = number
+        max = number
+      }))
+    }))
+    enable_addons = optional(
+      object({
+        cloudrun                       = optional(bool, false)
+        config_connector               = optional(bool, false)
+        dns_cache                      = optional(bool, false)
+        gce_persistent_disk_csi_driver = optional(bool, false)
+        gcp_filestore_csi_driver       = optional(bool, false)
+        gke_backup_agent               = optional(bool, false)
+        horizontal_pod_autoscaling     = optional(bool, false)
+        http_load_balancing            = optional(bool, false)
+        istio = optional(object({
+          enable_tls = bool
+        }))
+        kalm           = optional(bool, false)
+        network_policy = optional(bool, false)
+      }),
+      {
+        horizontal_pod_autoscaling = true
+        http_load_balancing        = true
+      }
+    )
+    enable_features = optional(
+      object({
+        autopilot            = optional(bool, false)
+        binary_authorization = optional(bool, false)
+        cloud_dns = optional(object({
+          provider = optional(string)
+          scope    = optional(string)
+          domain   = optional(string)
+        }))
+        database_encryption = optional(object({
+          state    = string
+          key_name = string
+        }))
+        dataplane_v2         = optional(bool, false)
+        groups_for_rbac      = optional(string)
+        intranode_visibility = optional(bool, false)
+        l4_ilb_subsetting    = optional(bool, false)
+        pod_security_policy  = optional(bool, false)
+        resource_usage_export = optional(object({
+          dataset                              = string
+          enable_network_egress_metering       = optional(bool)
+          enable_resource_consumption_metering = optional(bool)
+        }))
+        shielded_nodes = optional(bool, false)
+        tpu            = optional(bool, false)
+        upgrade_notifications = optional(object({
+          topic_id = optional(string)
+        }))
+        vertical_pod_autoscaling = optional(bool, false)
+        workload_identity        = optional(bool, false)
+      }),
+      {
+        workload_identity = true
+      }
+    )
+    issue_client_certificate = optional(bool, false)
+    labels                   = optional(map(string))
+    location                 = string
+    logging_config           = optional(list(string), ["SYSTEM_COMPONENTS"])
+    maintenance_config = optional(
+      object({
+        daily_window_start_time = optional(string)
+        recurring_window = optional(object({
+          start_time = string
+          end_time   = string
+          recurrence = string
+        }))
+        maintenance_exclusions = optional(list(object({
+          name       = string
+          start_time = string
+          end_time   = string
+          scope      = optional(string)
+        })))
+      }),
+      {
+        daily_window_start_time = "03:00"
+        recurring_window        = null
+        maintenance_exclusion   = []
+      }
+    )
+    max_pods_per_node  = optional(number, 110)
+    min_master_version = optional(string)
+    monitoring_config  = optional(list(string), ["SYSTEM_COMPONENTS"])
+    node_locations     = optional(list(string))
+    release_channel    = optional(string)
+    vpc_config = object({
+      network                  = string
+      subnetwork               = string
+      master_authorized_ranges = optional(map(string))
+      master_ipv4_cidr_block   = optional(string)
+      secondary_range_blocks = optional(object({
+        pods     = string
+        services = string
+      }), )
+      secondary_range_names = optional(object({
+        pods     = string
+        services = string
+      }), { pods = "pods", services = "services" })
     })
   }))
-}
-
-variable "dns_domain" {
-  description = "Domain name used for clusters, prefixed by each cluster name. Leave null to disable Cloud DNS for GKE."
-  type        = string
-  default     = null
 }
 
 variable "fleet_configmanagement_clusters" {
@@ -215,22 +263,23 @@ variable "nodepools" {
   })))
 }
 
-variable "peering_config" {
-  description = "Configure peering with the control plane VPC. Requires compute.networks.updatePeering. Set to null if you don't want to update the default peering configuration."
-  type = object({
-    export_routes = bool
-    import_routes = bool
-  })
-  default = {
-    export_routes = true
-    // TODO(jccb) is there any situation where the control plane VPC would export any routes?
-    import_routes = false
-  }
-}
-
 variable "prefix" {
   description = "Prefix used for resources that need unique names."
   type        = string
+}
+
+variable "private_cluster_config" {
+  description = "Private cluster configuration, applied to all clusters."
+  type = object({
+    enable_private_endpoint = optional(bool)
+    master_global_access    = optional(bool)
+    peering_config = optional(object({
+      export_routes = optional(bool)
+      import_routes = optional(bool)
+      project_id    = optional(string)
+    }))
+  })
+  default = null
 }
 
 variable "project_id" {
@@ -246,9 +295,8 @@ variable "project_services" {
 }
 
 variable "vpc_config" {
-  description = "Shared VPC project and VPC details."
+  description = "VPC-level configuration."
   type = object({
     host_project_id = string
-    vpc_self_link   = string
   })
 }
