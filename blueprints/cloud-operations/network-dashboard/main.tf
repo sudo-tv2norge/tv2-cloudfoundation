@@ -168,7 +168,7 @@ module "cloud-function" {
   environment_variables = {
     MONITORED_PROJECTS_LIST = local.projects
     MONITORED_FOLDERS_LIST  = local.folders
-    MONITORING_PROJECT_ID   = local.monitoring_project
+    MONITORING_PROJECT_ID   = local.metrics_project
     ORGANIZATION_ID         = var.organization_id
     CF_VERSION              = var.cf_version
   }
