@@ -177,7 +177,7 @@ gcloud compute ssh test-1 -- \
 
 ![](drop%20connections%20on%20unhealthy.png)
 
-Connections can be dropped if all backends are unhealthy by configuring a Failover Policy, which requires an extra backend marked as failover. The failover backend needs at least one instance.
+Connections can be dropped if all backends are unhealthy by configuring a Failover Policy, which requires an extra backend marked as failover. The failover backend just needs an instance group, there's no need for actual instances.
 
 ```bash
 terraform apply -var enable_failover=true
