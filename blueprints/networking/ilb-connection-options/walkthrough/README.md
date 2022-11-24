@@ -91,6 +91,8 @@ You can influence Connection Tracking behaviour by defining a Tracking Policy fo
 - Idle Timeout<br>
   how long to keep a Connection Tracking entry if Session Affinity < 5-tuple and Tracking Mode is per session, otherwise default to 10m
 
+*using per connection tracking with coarser session affinity might change the selected backend for a new connection when backends are added or removed*
+
 ## Disabling connection persistence
 
 ![](persisted%20connection%20disabled.png)
