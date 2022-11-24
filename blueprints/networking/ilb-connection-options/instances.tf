@@ -47,29 +47,12 @@ resource "google_compute_instance_group" "default" {
   }
 }
 
-resource "google_compute_instance" "failover" {
-  project      = var.project_id
-  name         = "test-failover"
-  machine_type = "e2-small"
-  zone         = "${var.region}-b"
-  boot_disk {
-    initialize_params {
-      image = "cos-cloud/cos-93-lts"
-    }
-  }
-  network_interface {
-    network    = var.vpc
-    subnetwork = var.subnet
-  }
-  tags = ["ssh", "test-echo"]
-}
-
 resource "google_compute_instance_group" "failover" {
   project     = var.project_id
   name        = "test-failover"
   zone        = "${var.region}-b"
   description = "Failover nginx group."
-  instances   = [google_compute_instance.failover.self_link]
+  instances   = []
   named_port {
     name = "echo"
     port = 7
