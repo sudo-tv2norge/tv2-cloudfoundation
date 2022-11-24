@@ -38,7 +38,7 @@ watch -n1 "date |nc -N $ILB 7"
 Connect a second client with a persistent connection.
 
 ```bash
-nc ILB 7
+nc $ILB 7
 # type something to check which host is serving
 ```
 
