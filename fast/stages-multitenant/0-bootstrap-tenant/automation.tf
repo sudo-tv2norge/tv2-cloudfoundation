@@ -40,6 +40,7 @@ module "automation-project" {
   iam = {
     "roles/owner" = [
       module.automation-tf-resman-sa.iam_email,
+      # this is needed mainly to be able to run destroy
       "serviceAccount:${local.resman_sa}"
     ]
     "roles/cloudbuild.builds.editor" = [
