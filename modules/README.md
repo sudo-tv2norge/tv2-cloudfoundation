@@ -45,10 +45,11 @@ These modules are used in the examples included in this repository. If you are u
 - [Cloud Endpoints](./endpoints)
 - [DNS](./dns)
 - [DNS Response Policy](./dns-response-policy/)
-- [Global Load Balancer (classic)](./net-glb/)
+- [Global Load Balancer](./net-glb/)
 - [L4 ILB](./net-ilb)
 - [L7 ILB](./net-ilb-l7)
 - [NAT](./net-cloudnat)
+- [Network Load Balancer](./net-nlb)
 - [Service Directory](./service-directory)
 - [VPC](./net-vpc)
 - [VPC firewall](./net-vpc-firewall)
@@ -70,8 +71,10 @@ These modules are used in the examples included in this repository. If you are u
 
 ## Data
 
+- [AlloyDB instance](./alloydb-instance)
 - [BigQuery dataset](./bigquery-dataset)
 - [Bigtable instance](./bigtable-instance)
+- [Cloud Dataplex](./cloud-dataplex)
 - [Cloud SQL instance](./cloudsql-instance)
 - [Data Catalog Policy Tag](./data-catalog-policy-tag)
 - [Datafusion](./datafusion)

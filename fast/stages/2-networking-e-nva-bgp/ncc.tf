@@ -43,7 +43,7 @@ module "spokes-trusted" {
       ? var.ncc_asn.nva_primary
       : var.ncc_asn.nva_secondary
     )
-    ruotes_priority = 100
+    routes_priority = 100
 
     custom_advertise = {
       all_subnets = false
@@ -93,11 +93,11 @@ module "spokes-untrusted" {
       ? var.ncc_asn.nva_primary
       : var.ncc_asn.nva_secondary
     )
-    ruotes_priority = 100
+    routes_priority = 100
 
     custom_advertise = {
       all_subnets = false
-      ip_ranges   = { "0.0.0.0/0" = "Deafult route." }
+      ip_ranges   = { "0.0.0.0/0" = "Default route." }
     }
   }
 

@@ -131,7 +131,7 @@ variable "fleet_configmanagement_templates" {
 }
 
 variable "fleet_features" {
-  description = "Enable and configue fleet features. Set to null to disable GKE Hub if fleet workload identity is not used."
+  description = "Enable and configure fleet features. Set to null to disable GKE Hub if fleet workload identity is not used."
   type = object({
     appdevexperience             = bool
     configmanagement             = bool
@@ -202,7 +202,11 @@ variable "nodepools" {
     service_account       = optional(any)
     sole_tenant_nodegroup = optional(string)
     tags                  = optional(list(string))
-    taints                = optional(list(any))
+    taints = optional(list(object({
+      key    = string
+      value  = string
+      effect = string
+    })))
   })))
   default  = {}
   nullable = false

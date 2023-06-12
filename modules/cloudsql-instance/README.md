@@ -27,7 +27,6 @@ module "vpc" {
   name       = "my-network"
   psa_config = {
     ranges = { cloud-sql = "10.60.0.0/16" }
-    routes = null
   }
 }
 
@@ -40,7 +39,7 @@ module "db" {
   database_version = "POSTGRES_13"
   tier             = "db-g1-small"
 }
-# tftest modules=3 resources=9 inventory=simple.yaml
+# tftest modules=3 resources=11 inventory=simple.yaml
 ```
 
 ## Cross-regional read replica
@@ -162,7 +161,6 @@ module "db" {
 }
 # tftest modules=1 resources=2 inventory=public-ip.yaml
 ```
-
 <!-- BEGIN TFDOC -->
 
 ## Variables
@@ -199,8 +197,8 @@ module "db" {
 |---|---|:---:|
 | [connection_name](outputs.tf#L24) | Connection name of the primary instance. |  |
 | [connection_names](outputs.tf#L29) | Connection names of all instances. |  |
-| [id](outputs.tf#L37) | ID of the primary instance. |  |
-| [ids](outputs.tf#L42) | IDs of all instances. |  |
+| [id](outputs.tf#L37) | Fully qualified primary instance id. |  |
+| [ids](outputs.tf#L42) | Fully qualified ids of all instances. |  |
 | [instances](outputs.tf#L50) | Cloud SQL instance resources. | ✓ |
 | [ip](outputs.tf#L56) | IP address of the primary instance. |  |
 | [ips](outputs.tf#L61) | IP addresses of all instances. |  |

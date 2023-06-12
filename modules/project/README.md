@@ -294,7 +294,7 @@ module "project" {
 
 Organization policies can be loaded from a directory containing YAML files where each file defines one or more constraints. The structure of the YAML files is exactly the same as the `org_policies` variable.
 
-Note that contraints defined via `org_policies` take precedence over those in `org_policies_data_path`. In other words, if you specify the same contraint in a YAML file *and* in the `org_policies` variable, the latter will take priority.
+Note that constraints defined via `org_policies` take precedence over those in `org_policies_data_path`. In other words, if you specify the same constraint in a YAML file *and* in the `org_policies` variable, the latter will take priority.
 
 The example below deploys a few organization policies split between two YAML files.
 
@@ -558,10 +558,11 @@ output "compute_robot" {
 | name | description | sensitive |
 |---|---|:---:|
 | [custom_roles](outputs.tf#L17) | Ids of the created custom roles. |  |
-| [name](outputs.tf#L25) | Project name. |  |
-| [number](outputs.tf#L37) | Project number. |  |
-| [project_id](outputs.tf#L54) | Project id. |  |
-| [service_accounts](outputs.tf#L73) | Product robot service accounts in project. |  |
-| [sink_writer_identities](outputs.tf#L89) | Writer identities created for each sink. |  |
+| [id](outputs.tf#L25) | Project id. |  |
+| [name](outputs.tf#L44) | Project name. |  |
+| [number](outputs.tf#L56) | Project number. |  |
+| [project_id](outputs.tf#L75) | Project id. |  |
+| [service_accounts](outputs.tf#L94) | Product robot service accounts in project. |  |
+| [sink_writer_identities](outputs.tf#L110) | Writer identities created for each sink. |  |
 
 <!-- END TFDOC -->
