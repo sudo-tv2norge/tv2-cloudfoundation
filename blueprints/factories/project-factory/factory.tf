@@ -46,6 +46,7 @@ locals {
         try(v.metric_scopes, null),
         var.data_defaults.metric_scopes
       )
+      org_policies = try(v.org_policies, {})
       parent = coalesce(
         var.data_overrides.parent,
         try(v.parent, null),
@@ -76,9 +77,13 @@ locals {
         try(v.services, null),
         var.data_defaults.services
       )
-      shared_vpc_service_config = coalesce(
-        try(v.shared_vpc_service_config, null),
-        var.data_defaults.shared_vpc_service_config
+      shared_vpc_service_config = (
+        try(v.shared_vpc_service_config, null) != null
+        ? merge(
+          { service_identity_iam = {}, service_iam_grants = [] },
+          v.shared_vpc_service_config
+        )
+        : var.data_defaults.shared_vpc_service_config
       )
       tag_bindings = coalesce(
         var.data_overrides.tag_bindings,

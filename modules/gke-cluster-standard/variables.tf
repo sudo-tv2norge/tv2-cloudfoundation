@@ -19,15 +19,16 @@ variable "backup_configs" {
   type = object({
     enable_backup_agent = optional(bool, false)
     backup_plans = optional(map(object({
+      region                            = string
+      applications                      = optional(map(list(string)))
       encryption_key                    = optional(string)
       include_secrets                   = optional(bool, true)
       include_volume_data               = optional(bool, true)
       namespaces                        = optional(list(string))
-      region                            = string
-      schedule                          = string
-      retention_policy_days             = optional(string)
+      schedule                          = optional(string)
+      retention_policy_days             = optional(number)
       retention_policy_lock             = optional(bool, false)
-      retention_policy_delete_lock_days = optional(string)
+      retention_policy_delete_lock_days = optional(number)
     })), {})
   })
   default  = {}
@@ -55,6 +56,13 @@ variable "cluster_autoscaling" {
   default = null
 }
 
+variable "deletion_protection" {
+  description = "Whether or not to allow Terraform to destroy the cluster. Unless this field is set to false in Terraform state, a terraform destroy or terraform apply that would delete the cluster will fail."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "description" {
   description = "Cluster description."
   type        = string
@@ -69,6 +77,7 @@ variable "enable_addons" {
     dns_cache                      = optional(bool, false)
     gce_persistent_disk_csi_driver = optional(bool, false)
     gcp_filestore_csi_driver       = optional(bool, false)
+    gcs_fuse_csi_driver            = optional(bool, false)
     horizontal_pod_autoscaling     = optional(bool, false)
     http_load_balancing            = optional(bool, false)
     istio = optional(object({
@@ -99,6 +108,7 @@ variable "enable_features" {
       key_name = string
     }))
     dataplane_v2         = optional(bool, false)
+    fqdn_network_policy  = optional(bool, false)
     gateway_api          = optional(bool, false)
     groups_for_rbac      = optional(string)
     intranode_visibility = optional(bool, false)
@@ -120,6 +130,12 @@ variable "enable_features" {
   })
   default = {
     workload_identity = true
+  }
+  validation {
+    condition = (
+      var.enable_features.fqdn_network_policy ? var.enable_features.dataplane_v2 : true
+    )
+    error_message = "FQDN network policy is only supported for clusters with Dataplane v2."
   }
 }
 

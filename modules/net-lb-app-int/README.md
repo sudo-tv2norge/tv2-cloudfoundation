@@ -241,6 +241,7 @@ Similarly to instance groups, NEGs can also be managed by this module which supp
 
 ```hcl
 resource "google_compute_address" "test" {
+  project      = var.project_id
   name         = "neg-test"
   subnetwork   = var.subnet.self_link
   address_type = "INTERNAL"
@@ -330,9 +331,7 @@ module "ilb-l7" {
   backend_service_configs = {
     default = {
       backends = [{
-        balancing_mode = "RATE"
-        group          = "my-neg"
-        max_rate       = { per_endpoint = 1 }
+        group = "my-neg"
       }]
       health_checks = []
     }

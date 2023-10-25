@@ -67,8 +67,9 @@ resource "google_apigee_envgroup_attachment" "envgroup_attachments" {
       envgroup    = v2
     }
   }])...)
-  envgroup_id = try(google_apigee_envgroup.envgroups[each.value.envgroup].id, each.value.envgroup)
+  envgroup_id = "${local.org_id}/envgroups/${each.value.envgroup}"
   environment = google_apigee_environment.environments[each.value.environment].name
+  depends_on  = [google_apigee_envgroup.envgroups]
 }
 
 resource "google_apigee_environment_iam_binding" "binding" {
@@ -120,8 +121,8 @@ resource "google_apigee_instance_attachment" "instance_attachments" {
     }
   }])...)
   instance_id = google_apigee_instance.instances[each.value.instance].id
-  environment = try(google_apigee_environment.environments[each.value.environment].name,
-  "${local.org_id}/environments/${each.value.environment}")
+  environment = each.value.environment
+  depends_on  = [google_apigee_environment.environments]
 }
 
 resource "google_apigee_endpoint_attachment" "endpoint_attachments" {
@@ -136,20 +137,35 @@ resource "google_apigee_addons_config" "addons_config" {
   for_each = toset(var.addons_config == null ? [] : [""])
   org      = local.org_name
   addons_config {
-    advanced_api_ops_config {
-      enabled = var.addons_config.advanced_api_ops
+    dynamic "advanced_api_ops_config" {
+      for_each = var.addons_config.advanced_api_ops ? [""] : []
+      content {
+        enabled = true
+      }
     }
-    api_security_config {
-      enabled = var.addons_config.api_security
+    dynamic "api_security_config" {
+      for_each = var.addons_config.api_security ? [""] : []
+      content {
+        enabled = true
+      }
     }
-    connectors_platform_config {
-      enabled = var.addons_config.connectors_platform
+    dynamic "connectors_platform_config" {
+      for_each = var.addons_config.connectors_platform ? [""] : []
+      content {
+        enabled = true
+      }
     }
-    integration_config {
-      enabled = var.addons_config.integration
+    dynamic "integration_config" {
+      for_each = var.addons_config.integration ? [""] : []
+      content {
+        enabled = true
+      }
     }
-    monetization_config {
-      enabled = var.addons_config.monetization
+    dynamic "monetization_config" {
+      for_each = var.addons_config.monetization ? [""] : []
+      content {
+        enabled = true
+      }
     }
   }
 }

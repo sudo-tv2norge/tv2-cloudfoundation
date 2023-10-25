@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 resource "google_container_cluster" "cluster" {
   provider    = google-beta
   project     = var.project_id
@@ -31,9 +30,11 @@ resource "google_container_cluster" "cluster" {
   enable_intranode_visibility = var.enable_features.intranode_visibility
   enable_l4_ilb_subsetting    = var.enable_features.l4_ilb_subsetting
   enable_shielded_nodes       = var.enable_features.shielded_nodes
+  enable_fqdn_network_policy  = var.enable_features.fqdn_network_policy
   enable_tpu                  = var.enable_features.tpu
   initial_node_count          = 1
   remove_default_node_pool    = true
+  deletion_protection         = var.deletion_protection
   datapath_provider = (
     var.enable_features.dataplane_v2
     ? "ADVANCED_DATAPATH"
@@ -81,6 +82,9 @@ resource "google_container_cluster" "cluster" {
     }
     gcp_filestore_csi_driver_config {
       enabled = var.enable_addons.gcp_filestore_csi_driver
+    }
+    gcs_fuse_csi_driver_config {
+      enabled = var.enable_addons.gcs_fuse_csi_driver
     }
     kalm_config {
       enabled = var.enable_addons.kalm
@@ -417,12 +421,27 @@ resource "google_gke_backup_backup_plan" "backup_plan" {
       }
     }
 
-    all_namespaces = lookup(each.value, "namespaces", null) != null ? null : true
+    all_namespaces = lookup(each.value, "namespaces", null) != null || lookup(each.value, "applications", null) != null ? null : true
     dynamic "selected_namespaces" {
       for_each = each.value.namespaces != null ? [""] : []
       content {
         namespaces = each.value.namespaces
       }
+    }
+    dynamic "selected_applications" {
+      for_each = each.value.applications != null ? [""] : []
+      content {
+        dynamic "namespaced_names" {
+          for_each = flatten([for k, vs in each.value.applications : [
+            for v in vs : { namespace = k, name = v }
+          ]])
+          content {
+            namespace = namespaced_names.value.namespace
+            name      = namespaced_names.value.name
+          }
+        }
+      }
+
     }
   }
 }
@@ -432,11 +451,7 @@ resource "google_compute_network_peering_routes_config" "gke_master" {
   count = (
     try(var.private_cluster_config.peering_config, null) != null ? 1 : 0
   )
-  project = (
-    try(var.private_cluster_config.peering_config, null) == null
-    ? var.project_id
-    : var.private_cluster_config.peering_config.project_id
-  )
+  project = coalesce(var.private_cluster_config.peering_config.project_id, var.project_id)
   peering = try(
     google_container_cluster.cluster.private_cluster_config.0.peering_name,
     null
