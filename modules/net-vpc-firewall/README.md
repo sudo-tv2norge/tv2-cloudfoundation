@@ -7,6 +7,19 @@ This module allows creation and management of different types of firewall rules 
 
 The predefined rules are enabled by default and set to the ranges of the GCP health checkers for HTTP/HTTPS, and the IAP forwarders for SSH. See the relevant section below on how to configure or disable them.
 
+<!-- BEGIN TOC -->
+- [Examples](#examples)
+  - [Minimal open firewall](#minimal-open-firewall)
+  - [Custom rules](#custom-rules)
+  - [Controlling or turning off default rules](#controlling-or-turning-off-default-rules)
+    - [Overriding default tags and ranges](#overriding-default-tags-and-ranges)
+    - [Disabling predefined rules](#disabling-predefined-rules)
+  - [Including source & destination ranges](#including-source-destination-ranges)
+  - [Rules Factory](#rules-factory)
+- [Variables](#variables)
+- [Outputs](#outputs)
+<!-- END TOC -->
+
 ## Examples
 
 ### Minimal open firewall
@@ -186,6 +199,11 @@ module "firewall" {
 
 ```yaml
 # tftest-file id=lbs path=configs/firewall/rules/load_balancers.yaml
+
+---
+# Terraform will be unable to decode this file if it does not contain valid YAML
+# You can retain `---` (start of the document) to indicate an empty document.
+
 ingress:
   allow-healthchecks:
     description: Allow ingress from healthchecks.
@@ -220,6 +238,11 @@ egress:
 
 ```yaml
 # tftest-file id=cidrs path=configs/firewall/cidrs.yaml
+
+---
+# Terraform will be unable to decode this file if it does not contain valid YAML
+# You can retain `---` (start of the document) to indicate an empty document.
+
 healthchecks:
   - 35.191.0.0/16
   - 130.211.0.0/22
